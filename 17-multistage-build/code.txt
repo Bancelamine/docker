@@ -1,0 +1,97 @@
+
+## From sans AS & plusieurs niveaux
+
+```
+docker run --rm -ti app:1.0.0 cat /var/xavki.txt
+```
+
+```
+FROM alpine:3.17.3
+RUN echo "xavki" >  /var/xavki.1
+
+FROM alpine:3.17.3
+RUN echo "xavki" > /var/xavki.2
+COPY --from=0 /var/xavki.1 /
+
+FROM alpine:3.17.3
+RUN echo "xavki" > /var/xavki.3
+COPY --from=1 /var/xavki.2 /
+```
+
+## Avec Alias
+
+```
+FROM alpine:3.17.3 AS x1
+RUN echo "xavki" >  /var/xavki.1
+
+FROM alpine:3.17.3 AS x2
+RUN echo "xavki" > /var/xavki.2
+COPY --from=x1 /var/xavki.1 /
+
+
+FROM alpine:3.17.3 AS x3
+RUN echo "xavki" > /var/xavki.3
+COPY --from=x2 /var/xavki.2 /
+```
+
+## On peut donc se dire
+
+```
+FROM nginx:1.24 AS local_nginx
+
+FROM alpine:3.17.3 AS x2
+RUN echo "xavki" > /var/xavki.2
+COPY --from=local_nginx /etc/nginx/nginx.conf /etc
+```
+
+# Mais non !!!
+
+```
+FROM alpine:3.17.3 AS x2
+RUN echo "xavki" > /var/xavki.2
+COPY --from=nginx:1.24 /etc/nginx/nginx.conf /etc
+```
+
+
+
+## Avec la nouvelle version de build mettre des conditions
+
+```
+ARG TYPE=development
+
+FROM alpine:3.17.3 AS base
+RUN echo "Je suis la base" > /var/xavki.txt
+
+FROM base AS branch-version-development
+RUN echo "dev" >> /var/xavki.txt
+ENV ENV=development
+
+FROM base AS branch-version-production
+RUN echo "production" >> /var/xavki.txt
+ENV ENV=production
+
+FROM branch-version-${TYPE} AS final
+RUN echo "point final" >> /var/xavki.txt
+```
+
+# Pour débuger ou à l'ancienne --target
+
+```
+docker build -t app:1.0.0 --target=branch-version-production .
+```
+
+```
+FROM alpine:3.17.3 AS base
+RUN echo "Je suis la base" > /var/xavki.txt
+
+FROM base AS branch-version-development
+RUN echo "dev" >> /var/xavki.txt
+ENV ENV=development
+RUN echo "point final" >> /var/xavki.txt
+
+FROM base AS branch-version-production
+RUN echo "production" >> /var/xavki.txt
+ENV ENV=production
+RUN echo "point final" >> /var/xavki.txt
+```
+
