@@ -131,3 +131,26 @@ CMD ["./app"]
 ```
 
 ## Vérifier la taille de l'image
+
+## Ou encore... (faut pas abuser ;) )
+
+
+```
+FROM alpine:3.17.3 as git
+
+RUN apk add --no-cache git
+RUN git clone https://github.com/simonvanderveldt/go-hello-world-http
+
+FROM golang:1.20.4 AS builder
+
+WORKDIR /app
+COPY --from=git go-hello-world-http/ ./
+RUN go mod init hello && go mod tidy
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
+
+FROM scratch
+COPY --from=builder /app/app /app/app
+WORKDIR /app
+EXPOSE 8080
+CMD ["./app"]
+```
