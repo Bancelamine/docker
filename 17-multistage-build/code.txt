@@ -95,3 +95,39 @@ ENV ENV=production
 RUN echo "point final" >> /var/xavki.txt
 ```
 
+## Exemple Golang
+
+```
+package main
+
+import (
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "Hello, World!")
+	})
+
+	http.ListenAndServe(":8080", nil)
+}
+```
+
+```
+FROM golang:1.20.4 AS builder
+
+WORKDIR /app
+COPY go.mod ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
+
+FROM scratch #alpine:3.17.3
+COPY --from=builder /app/app /app/app
+WORKDIR /app
+EXPOSE 8080
+CMD ["./app"]
+```
+
+## Vérifier la taille de l'image
